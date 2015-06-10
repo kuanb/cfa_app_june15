@@ -1,0 +1,134 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>CfA Application</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.16/angular.min.js"></script>
+  <script src="ui-bs.js"></script>
+
+</head>
+
+<body ng-app="cfaApp">
+  <div class="container" ng-controller="cfaController">
+
+    <div class="page-header">
+      <h2>
+        Overview of simple dataset
+        <small>
+          CfA June 2015 Submission by Kuan Butts
+        </small>
+      </h2>
+    </div>
+
+    <p>
+      Write a brief program in the language of your choice to summarize a simple dataset. This is a tab-delimited data file representing U.S. Census tracts around Oakland, CA.
+    <br>
+      Your program should calculate the population and housing densities for each place (https://www.census.gov/geo/reference/gtc/gtc_place.html), and the densest and sparsest places. You can use your preferred programming language, and decide on the presentation format of the resulting data.
+    </p>
+
+    <h4>
+      Results
+    </h4>
+
+    <div class="row">
+      <div class="col-xs-5 col-xs-offset-1">
+        <p>
+          Highest densities - Housing_Density
+        </p>
+        <ul>
+          <li ng-repeat="tract in data | orderBy:'-Housing_Density' | limitTo:5">
+            Tract Number: {{ tract.Tract }} ({{ tract['Housing_Density'] }}%)
+          </li>
+        </ul>
+
+        <p>
+          Lowest densities - Housing_Density
+        </p>
+        <ul>
+          <li ng-repeat="tract in data | orderBy:'Housing_Density' | limitTo:5">
+            Tract Number: {{ tract.Tract }} ({{ tract['Housing_Density'] }}%)
+          </li>
+        </ul>
+      </div>
+      <div class="col-xs-6">
+        <p>
+          Highest densities - Population_Density
+        </p>
+        <ul>
+          <li ng-repeat="tract in data | orderBy:'-Population_Density' | limitTo:5">
+            Tract Number: {{ tract.Tract }} ({{ tract['Population_Density'] }}%)
+          </li>
+        </ul>
+
+        <p>
+          Lowest densities - Population_Density
+        </p>
+        <ul>
+          <li ng-repeat="tract in data | orderBy:'Population_Density' | limitTo:5">
+            Tract Number: {{ tract.Tract }} ({{ tract['Population_Density'] }}%)
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <p>
+      Could do more with this dataset naturally but adhering to the 30 minute rule so just presenting the sorted data above and the table of the resulting objects I created (look at Angular Controller in code) below.
+    </p>
+
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th ng-repeat="(key, value) in data[0]">
+            {{ key }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="tract in data">
+          <td ng-repeat="(key, value) in tract">
+            {{ value }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</body>
+
+<script>
+  angular.module('cfaApp', ['ui.bootstrap'])
+  .service('mathService', function() {
+    this.round = function (n) {
+      var h = Math.trunc(n * 10000)/100;
+      return Number(h)
+    };
+  })
+  .controller('cfaController', function ($scope, $http, mathService) {
+    $http.get('tracts.txt')
+    .success(function (data, status) {
+      // clean up data response
+      var data = data.split(/\r?\n/);
+      var headers = data[0].split(/\t/);
+      var cleanData = [];
+      for (var i = 1; i < data.length; i++){
+        var line = data[i].split(/\t/);
+        var rowObj = {};
+        for (var n = 0; n < line.length; n++){
+          rowObj[headers[n]] = line[n];
+        };
+        rowObj['Population_Density'] = mathService.round(Number(rowObj['Population'])/Number(rowObj['Land Area']));
+        rowObj['Housing_Density']    = mathService.round(Number(rowObj['Housing Units'])/Number(rowObj['Land Area']));
+        cleanData.push(rowObj);
+      }
+      $scope.data = cleanData;
+      console.log(cleanData);
+    })
+  });
+</script>
+
+</html>
+
+
+
